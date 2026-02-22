@@ -3,15 +3,23 @@ import yfinance as yf
 import pandas as pd
 from datetime import datetime
 import time
-import uuid  # <-- Naya Security Feature
+import uuid 
 
 # ==========================================
-# 1. PAGE SETUP & ZERO-LAG DIGITAL WALLPAPER
+# 1. PAGE SETUP & MOBILE-SMOOTH DIGITAL WALLPAPER
 # ==========================================
 st.set_page_config(page_title="The Safal Trader Ultra Pro", page_icon="📈", layout="wide")
 
 page_bg_pro = """
 <style>
+/* MOBILE ANTI-REFRESH & SMOOTH SCROLLING LOCK */
+html, body, [data-testid="stAppViewContainer"] {
+    overscroll-behavior-y: none !important; /* Yeh galti se page refresh hone se rokega */
+    overscroll-behavior-x: none !important;
+    -webkit-overflow-scrolling: touch; /* Mobile par makkhan jaisi scrolling ke liye */
+}
+
+/* Digital Wallpaper */
 [data-testid="stAppViewContainer"] {
     background-color: #0e1117; 
     background-image: 
@@ -24,7 +32,16 @@ page_bg_pro = """
 }
 [data-testid="stHeader"] { background-color: rgba(0,0,0,0); }
 .stMarkdown, .stTitle, .stHeader, .stSubheader, .stText, p, h1, h2, h3, label, span { color: #E0E3EB !important; text-shadow: 0px 1px 2px rgba(0,0,0,0.5); }
-[data-testid="stDataFrame"] { background-color: rgba(30, 34, 45, 0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px; }
+
+/* Table Mobile Fix */
+[data-testid="stDataFrame"] { 
+    background-color: rgba(30, 34, 45, 0.8); 
+    border: 1px solid rgba(255,255,255,0.1); 
+    border-radius: 10px; 
+    padding: 10px; 
+    touch-action: pan-y; /* Table ke andar atakne se rokega */
+}
+
 div.stButton > button:first-child { background-color: #2962FF; color: white; border: none; border-radius: 6px; font-weight: bold; box-shadow: 0 4px 6px rgba(41, 98, 255, 0.2); transition: all 0.3s ease; }
 div.stButton > button:first-child:hover { background-color: #1E53E5; box-shadow: 0 6px 8px rgba(41, 98, 255, 0.3); transform: translateY(-2px); }
 </style>
@@ -39,28 +56,25 @@ VALID_USERS = {
     "client1": "trade2026",  # Demo Client
 }
 
-# Global memory to track which device is using which ID
 @st.cache_resource
 def get_active_sessions():
     return {}
 
 active_sessions = get_active_sessions()
 
-# Har user ke phone/browser ke liye ek unique 'Device ID' banana
 if 'device_id' not in st.session_state:
     st.session_state['device_id'] = str(uuid.uuid4())
 
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 
-# --- KICK OUT LOGIC (SINGLE DEVICE CHECK) ---
+# --- KICK OUT LOGIC ---
 if st.session_state['logged_in']:
     current_user = st.session_state.get('username')
-    # Agar is ID par kisi naye device ne login kar liya hai, toh purane ko bahar nikal do
     if active_sessions.get(current_user) != st.session_state['device_id']:
         st.session_state['logged_in'] = False
         st.session_state['auto_scan'] = False
-        st.error("⚠️ **SECURITY ALERT:** Aapki ID kisi aur device par login ki gayi hai! Isliye aapko yahan se Logout kar diya gaya hai. Kripya apna password share na karein.")
+        st.error("⚠️ **SECURITY ALERT:** Aapki ID kisi aur device par login ki gayi hai! Isliye aapko yahan se Logout kar diya gaya hai.")
         time.sleep(4)
         st.rerun()
 
@@ -76,7 +90,6 @@ if not st.session_state['logged_in']:
         
         if submit_button:
             if username in VALID_USERS and VALID_USERS[username] == password:
-                # Naya login accept karein aur is Device ID ko active mark karein
                 active_sessions[username] = st.session_state['device_id']
                 st.session_state['logged_in'] = True
                 st.session_state['username'] = username
@@ -96,7 +109,6 @@ with col1:
     st.caption("Live Market Auto-Scanner | Institutional Grade Terminal")
 with col2:
     if st.button("Logout 🔒", key="logout_btn"):
-        # Logout karne par active session clear kar do
         if st.session_state.get('username') in active_sessions:
             del active_sessions[st.session_state['username']]
         st.session_state['logged_in'] = False
