@@ -5,37 +5,51 @@ from datetime import datetime
 import time
 
 # ==========================================
-# 1. PAGE SETUP & PROFESSIONAL UI (CSS)
+# 1. PAGE SETUP & ZERO-LAG TRADING THEME
 # ==========================================
 st.set_page_config(page_title="The Safal Trader Ultra Pro", page_icon="📈", layout="wide")
 
-# --- CUSTOM CSS FOR WALLPAPER & DARK THEME ---
-page_bg_img = """
+# --- CUSTOM CSS FOR ZERO-LAG TRADING THEME ---
+page_bg_color = """
 <style>
+/* TradingView Dark Theme Background with Grid */
 [data-testid="stAppViewContainer"] {
-background-image: url("https://images.unsplash.com/photo-1642543492481-44e81e3914a7?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
-background-size: cover;
-background-position: center;
-background-repeat: no-repeat;
-background-attachment: fixed;
+    background-color: #131722;
+    background-image: 
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 30px 30px;
 }
 
 [data-testid="stHeader"] {
-background-color: rgba(0,0,0,0);
+    background-color: rgba(0,0,0,0);
 }
 
-/* Text color changes for dark background visibility */
-.stMarkdown, .stTitle, .stHeader, .stSubheader, .stText, .stInfo, .stSuccess, .stWarning, .stError, p, h1, h2, h3 {
-    color: #ffffff !important;
-    text-shadow: 1px 1px 3px #000000;
+/* Premium Text Colors */
+.stMarkdown, .stTitle, .stHeader, .stSubheader, .stText, p, h1, h2, h3, label {
+    color: #E0E3EB !important;
 }
-/* Adjust input fields so they are readable */
-.stTextInput input {
-    color: #000000 !important;
+
+/* Make tables and success/info boxes look good in dark mode */
+[data-testid="stDataFrame"] {
+    background-color: #1E222D;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+div.stButton > button:first-child {
+    background-color: #2962FF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+}
+div.stButton > button:first-child:hover {
+    background-color: #1E53E5;
 }
 </style>
 """
-st.markdown(page_bg_img, unsafe_allow_html=True)
+st.markdown(page_bg_color, unsafe_allow_html=True)
 # -------------------------------------------
 
 # ==========================================
@@ -50,7 +64,7 @@ if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 
 if not st.session_state['logged_in']:
-    st.title("🔒 Login - The Safal Trader Ultra Pro")
+    st.title("🔒 Login - The Safal Trader Terminal")
     st.markdown("### Kripya Premium Scanner use karne ke liye apna **User ID** aur **Password** darj karein.")
     
     with st.form("login_form"):
@@ -61,7 +75,7 @@ if not st.session_state['logged_in']:
         if submit_button:
             if username in VALID_USERS and VALID_USERS[username] == password:
                 st.session_state['logged_in'] = True
-                st.success("✅ Login Successful! Loading dashboard...")
+                st.success("✅ Login Successful! Initializing Trading Terminal...")
                 time.sleep(1)
                 st.rerun()
             else:
@@ -73,8 +87,8 @@ if not st.session_state['logged_in']:
 # ==========================================
 col1, col2 = st.columns([8, 1])
 with col1:
-    st.title("📈 The Safal Trader Ultra Pro")
-    st.caption("Live Market Auto-Scanner | 250+ Stocks")
+    st.title("📈 The Safal Trader Terminal")
+    st.caption("Live Market Auto-Scanner | 250+ High Volume Stocks")
 with col2:
     if st.button("Logout 🔒", key="logout_btn"):
         st.session_state['logged_in'] = False
@@ -120,13 +134,13 @@ WATCHLIST = [
 if 'auto_scan' not in st.session_state:
     st.session_state['auto_scan'] = False
 
-st.subheader("⚙️ Scanner Controls")
+st.subheader("⚙️ Terminal Controls")
 c1, c2, c3 = st.columns(3)
 with c1:
     if st.button("🔍 Quick Scan (Once)", use_container_width=True):
         st.session_state['run_once'] = True
 with c2:
-    if st.button("🚀 Start Auto-Pilot (5 Min)", type="primary", use_container_width=True, help="Har 5 minute mein apne aap scan karega."):
+    if st.button("🚀 Start Auto-Pilot (5 Min)", use_container_width=True, help="Har 5 minute mein apne aap scan karega."):
         st.session_state['auto_scan'] = True
 with c3:
     if st.button("🛑 Stop Auto-Pilot", use_container_width=True):
@@ -138,14 +152,14 @@ with c3:
 if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
     st.session_state['run_once'] = False
     
-    st.toast(f"Scanning Started: {len(WATCHLIST)} Stocks...", icon="⏳") # Pop-up notification
+    st.toast(f"Market Scan Initiated: {len(WATCHLIST)} Stocks...", icon="⚡") 
     progress_bar = st.progress(0)
     status_text = st.empty()
     results = []
     
     for i, symbol in enumerate(WATCHLIST):
         stock_name = symbol.replace(".NS", "")
-        if i % 10 == 0: # Har 10 stock ke baad status update karega taaki fast lage
+        if i % 10 == 0: 
              status_text.markdown(f"**Scanning:** `{stock_name}` ({i+1}/{len(WATCHLIST)})")
         
         try:
@@ -176,7 +190,6 @@ if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
         st.success(f"🔥 {len(results)} High-Momentum Signals Found!")
         result_df = pd.DataFrame(results)
         
-        # Advanced Table Styling
         st.dataframe(
             result_df,
             use_container_width=True,
@@ -198,4 +211,4 @@ if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
         st.rerun()
 
 st.divider()
-st.markdown("<h5 style='text-align: center; color: grey;'>© 2026 The Safal Trader Ultra Pro | Enterprise Edition</h5>", unsafe_allow_html=True)
+st.markdown("<h5 style='text-align: center; color: #50535e;'>© 2026 The Safal Trader | Institutional Terminal</h5>", unsafe_allow_html=True)
