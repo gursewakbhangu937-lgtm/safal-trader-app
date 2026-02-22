@@ -5,51 +5,67 @@ from datetime import datetime
 import time
 
 # ==========================================
-# 1. PAGE SETUP & ZERO-LAG TRADING THEME
+# 1. PAGE SETUP & ZERO-LAG DIGITAL WALLPAPER
 # ==========================================
 st.set_page_config(page_title="The Safal Trader Ultra Pro", page_icon="📈", layout="wide")
 
-# --- CUSTOM CSS FOR ZERO-LAG TRADING THEME ---
-page_bg_color = """
+# --- CUSTOM CSS FOR DIGITAL TRADING WALLPAPER (NO IMAGE FILE = NO LAG) ---
+page_bg_pro = """
 <style>
-/* TradingView Dark Theme Background with Grid */
+/* Yeh ek "Digital Wallpaper" hai jo Pure CSS code se bana hai.
+   Isme koi bhaari photo download nahi hoti, isliye yeh SUPER FAST hai.
+   Yeh ek dark trading room ka mahol banata hai.
+*/
 [data-testid="stAppViewContainer"] {
-    background-color: #131722;
+    background-color: #0e1117; /* Deep Dark Base */
     background-image: 
-        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-    background-size: 30px 30px;
+        /* Subtle blue glow in center center (like a monitor) */
+        radial-gradient(at 50% 50%, rgba(41, 98, 255, 0.15) 0%, transparent 60%),
+        /* Subtle red glow in corner (like a bearish chart) */
+        radial-gradient(at 80% 20%, rgba(255, 65, 65, 0.1) 0%, transparent 50%),
+        /* A faint grid overlay to give chart feel */
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+    background-attachment: fixed;
 }
 
 [data-testid="stHeader"] {
     background-color: rgba(0,0,0,0);
 }
 
-/* Premium Text Colors */
-.stMarkdown, .stTitle, .stHeader, .stSubheader, .stText, p, h1, h2, h3, label {
+/* Premium White/Grey Text for readability */
+.stMarkdown, .stTitle, .stHeader, .stSubheader, .stText, p, h1, h2, h3, label, span {
     color: #E0E3EB !important;
+    text-shadow: 0px 1px 2px rgba(0,0,0,0.5); /* Thoda sa shadow text ko ubhaarne ke liye */
 }
 
-/* Make tables and success/info boxes look good in dark mode */
+/* Table styling for dark mode */
 [data-testid="stDataFrame"] {
-    background-color: #1E222D;
-    border-radius: 8px;
+    background-color: rgba(30, 34, 45, 0.8); /* Semi-transparent dark box */
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
     padding: 10px;
 }
 
+/* Premium Blue Buttons */
 div.stButton > button:first-child {
     background-color: #2962FF;
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
     font-weight: bold;
+    box-shadow: 0 4px 6px rgba(41, 98, 255, 0.2);
+    transition: all 0.3s ease;
 }
 div.stButton > button:first-child:hover {
     background-color: #1E53E5;
+    box-shadow: 0 6px 8px rgba(41, 98, 255, 0.3);
+    transform: translateY(-2px);
 }
 </style>
 """
-st.markdown(page_bg_color, unsafe_allow_html=True)
+st.markdown(page_bg_pro, unsafe_allow_html=True)
 # -------------------------------------------
 
 # ==========================================
@@ -87,8 +103,8 @@ if not st.session_state['logged_in']:
 # ==========================================
 col1, col2 = st.columns([8, 1])
 with col1:
-    st.title("📈 The Safal Trader Terminal")
-    st.caption("Live Market Auto-Scanner | 250+ High Volume Stocks")
+    st.title("📈 The Safal Trader Ultra Pro")
+    st.caption("Live Market Auto-Scanner | Institutional Grade Terminal")
 with col2:
     if st.button("Logout 🔒", key="logout_btn"):
         st.session_state['logged_in'] = False
@@ -98,7 +114,7 @@ with col2:
 st.divider()
 
 # ==========================================
-# 4. EXPANDED WATCHLIST (251 High Volume Stocks)
+# 4. WATCHLIST (251 High Volume Stocks)
 # ==========================================
 WATCHLIST = [
     # Nifty 50 & Major Large Caps
@@ -159,8 +175,8 @@ if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
     
     for i, symbol in enumerate(WATCHLIST):
         stock_name = symbol.replace(".NS", "")
-        if i % 10 == 0: 
-             status_text.markdown(f"**Scanning:** `{stock_name}` ({i+1}/{len(WATCHLIST)})")
+        if i % 20 == 0: 
+             status_text.markdown(f"**Scanning:** `{stock_name}`... ({i}/{len(WATCHLIST)})")
         
         try:
             df = yf.download(symbol, period="5d", interval="5m", progress=False)
@@ -195,10 +211,8 @@ if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
             use_container_width=True,
             hide_index=True,
             column_config={
-                "Signal": st.column_config.TextColumn("Signal", help="Trade Direction"),
-                "RSI": st.column_config.ProgressColumn(
-                    "RSI Strength", help="Relative Strength Index (0-100)", format="%d", min_value=0, max_value=100,
-                ),
+                "Signal": st.column_config.TextColumn("Signal"),
+                "RSI": st.column_config.ProgressColumn("RSI Strength", format="%d", min_value=0, max_value=100),
                  "Price (₹)": st.column_config.NumberColumn("Price (₹)", format="₹%.2f"),
             }
         )
@@ -211,4 +225,4 @@ if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
         st.rerun()
 
 st.divider()
-st.markdown("<h5 style='text-align: center; color: #50535e;'>© 2026 The Safal Trader | Institutional Terminal</h5>", unsafe_allow_html=True)
+st.markdown("<h5 style='text-align: center; color: #6e7285;'>© 2026 The Safal Trader | Institutional Terminal</h5>", unsafe_allow_html=True)
