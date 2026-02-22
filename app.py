@@ -3,82 +3,68 @@ import yfinance as yf
 import pandas as pd
 from datetime import datetime
 import time
+import uuid  # <-- Naya Security Feature
 
 # ==========================================
 # 1. PAGE SETUP & ZERO-LAG DIGITAL WALLPAPER
 # ==========================================
 st.set_page_config(page_title="The Safal Trader Ultra Pro", page_icon="📈", layout="wide")
 
-# --- CUSTOM CSS FOR DIGITAL TRADING WALLPAPER (NO IMAGE FILE = NO LAG) ---
 page_bg_pro = """
 <style>
-/* Yeh ek "Digital Wallpaper" hai jo Pure CSS code se bana hai.
-   Isme koi bhaari photo download nahi hoti, isliye yeh SUPER FAST hai.
-   Yeh ek dark trading room ka mahol banata hai.
-*/
 [data-testid="stAppViewContainer"] {
-    background-color: #0e1117; /* Deep Dark Base */
+    background-color: #0e1117; 
     background-image: 
-        /* Subtle blue glow in center center (like a monitor) */
         radial-gradient(at 50% 50%, rgba(41, 98, 255, 0.15) 0%, transparent 60%),
-        /* Subtle red glow in corner (like a bearish chart) */
         radial-gradient(at 80% 20%, rgba(255, 65, 65, 0.1) 0%, transparent 50%),
-        /* A faint grid overlay to give chart feel */
         linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
     background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
     background-attachment: fixed;
 }
-
-[data-testid="stHeader"] {
-    background-color: rgba(0,0,0,0);
-}
-
-/* Premium White/Grey Text for readability */
-.stMarkdown, .stTitle, .stHeader, .stSubheader, .stText, p, h1, h2, h3, label, span {
-    color: #E0E3EB !important;
-    text-shadow: 0px 1px 2px rgba(0,0,0,0.5); /* Thoda sa shadow text ko ubhaarne ke liye */
-}
-
-/* Table styling for dark mode */
-[data-testid="stDataFrame"] {
-    background-color: rgba(30, 34, 45, 0.8); /* Semi-transparent dark box */
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 10px;
-    padding: 10px;
-}
-
-/* Premium Blue Buttons */
-div.stButton > button:first-child {
-    background-color: #2962FF;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-weight: bold;
-    box-shadow: 0 4px 6px rgba(41, 98, 255, 0.2);
-    transition: all 0.3s ease;
-}
-div.stButton > button:first-child:hover {
-    background-color: #1E53E5;
-    box-shadow: 0 6px 8px rgba(41, 98, 255, 0.3);
-    transform: translateY(-2px);
-}
+[data-testid="stHeader"] { background-color: rgba(0,0,0,0); }
+.stMarkdown, .stTitle, .stHeader, .stSubheader, .stText, p, h1, h2, h3, label, span { color: #E0E3EB !important; text-shadow: 0px 1px 2px rgba(0,0,0,0.5); }
+[data-testid="stDataFrame"] { background-color: rgba(30, 34, 45, 0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px; }
+div.stButton > button:first-child { background-color: #2962FF; color: white; border: none; border-radius: 6px; font-weight: bold; box-shadow: 0 4px 6px rgba(41, 98, 255, 0.2); transition: all 0.3s ease; }
+div.stButton > button:first-child:hover { background-color: #1E53E5; box-shadow: 0 6px 8px rgba(41, 98, 255, 0.3); transform: translateY(-2px); }
 </style>
 """
 st.markdown(page_bg_pro, unsafe_allow_html=True)
-# -------------------------------------------
 
 # ==========================================
-# 2. LOGIN SYSTEM (SECURITY WALL)
+# 2. ANTI-PIRACY & LOGIN SYSTEM (SECURITY WALL)
 # ==========================================
 VALID_USERS = {
     "gursewak": "safal123",  # Admin
     "client1": "trade2026",  # Demo Client
 }
 
+# Global memory to track which device is using which ID
+@st.cache_resource
+def get_active_sessions():
+    return {}
+
+active_sessions = get_active_sessions()
+
+# Har user ke phone/browser ke liye ek unique 'Device ID' banana
+if 'device_id' not in st.session_state:
+    st.session_state['device_id'] = str(uuid.uuid4())
+
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 
+# --- KICK OUT LOGIC (SINGLE DEVICE CHECK) ---
+if st.session_state['logged_in']:
+    current_user = st.session_state.get('username')
+    # Agar is ID par kisi naye device ne login kar liya hai, toh purane ko bahar nikal do
+    if active_sessions.get(current_user) != st.session_state['device_id']:
+        st.session_state['logged_in'] = False
+        st.session_state['auto_scan'] = False
+        st.error("⚠️ **SECURITY ALERT:** Aapki ID kisi aur device par login ki gayi hai! Isliye aapko yahan se Logout kar diya gaya hai. Kripya apna password share na karein.")
+        time.sleep(4)
+        st.rerun()
+
+# --- LOGIN FORM ---
 if not st.session_state['logged_in']:
     st.title("🔒 Login - The Safal Trader Terminal")
     st.markdown("### Kripya Premium Scanner use karne ke liye apna **User ID** aur **Password** darj karein.")
@@ -90,7 +76,10 @@ if not st.session_state['logged_in']:
         
         if submit_button:
             if username in VALID_USERS and VALID_USERS[username] == password:
+                # Naya login accept karein aur is Device ID ko active mark karein
+                active_sessions[username] = st.session_state['device_id']
                 st.session_state['logged_in'] = True
+                st.session_state['username'] = username
                 st.success("✅ Login Successful! Initializing Trading Terminal...")
                 time.sleep(1)
                 st.rerun()
@@ -107,6 +96,9 @@ with col1:
     st.caption("Live Market Auto-Scanner | Institutional Grade Terminal")
 with col2:
     if st.button("Logout 🔒", key="logout_btn"):
+        # Logout karne par active session clear kar do
+        if st.session_state.get('username') in active_sessions:
+            del active_sessions[st.session_state['username']]
         st.session_state['logged_in'] = False
         st.session_state['auto_scan'] = False
         st.rerun()
@@ -117,13 +109,11 @@ st.divider()
 # 4. WATCHLIST (251 High Volume Stocks)
 # ==========================================
 WATCHLIST = [
-    # Nifty 50 & Major Large Caps
     "RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "ICICIBANK.NS", "BHARTIARTL.NS", "SBIN.NS", "INFY.NS", "LICI.NS", "ITC.NS", "HINDUNILVR.NS",
     "LT.NS", "BAJFINANCE.NS", "HCLTECH.NS", "MARUTI.NS", "SUNPHARMA.NS", "ADANIENT.NS", "KOTAKBANK.NS", "TITAN.NS", "ONGC.NS", "TATAMOTORS.NS",
     "NTPC.NS", "AXISBANK.NS", "ADANIPORTS.NS", "ULTRACEMCO.NS", "ASIANPAINT.NS", "COALINDIA.NS", "BAJAJFINSV.NS", "BAJAJ-AUTO.NS", "POWERGRID.NS", "NESTLEIND.NS",
     "WIPRO.NS", "M&M.NS", "HAL.NS", "JSWSTEEL.NS", "TATASTEEL.NS", "GRASIM.NS", "SBILIFE.NS", "BEL.NS", "LTIM.NS", "TRENT.NS", "INDUSINDBK.NS",
     "HINDALCO.NS", "CIPLA.NS", "DRREDDY.NS", "BRITANNIA.NS", "APOLLOHOSP.NS", "EICHERMOT.NS", "DIVISLAB.NS", "TECHM.NS", "BPCL.NS", "SHRIRAMFIN.NS",
-    # High Momentum Midcaps & F&O Stocks
     "ZOMATO.NS", "PAYTM.NS", "JIOFIN.NS", "IRFC.NS", "IREDA.NS", "RVNL.NS", "SUZLON.NS", "IDEA.NS", "YESBANK.NS", "PNB.NS", "BANKBARODA.NS",
     "UNIONBANK.NS", "CANBK.NS", "IDFCFIRSTB.NS", "PFC.NS", "RECLTD.NS", "GAIL.NS", "IOC.NS", "BHEL.NS", "CGPOWER.NS", "DLF.NS", "LODHA.NS",
     "TVSMOTOR.NS", "ASHOKLEY.NS", "MOTHERSON.NS", "SIEMENS.NS", "ABB.NS", "CUMMINSIND.NS", "POLYCAB.NS", "HAVELLS.NS", "DIXON.NS", "CHOLAFIN.NS",
@@ -156,14 +146,14 @@ with c1:
     if st.button("🔍 Quick Scan (Once)", use_container_width=True):
         st.session_state['run_once'] = True
 with c2:
-    if st.button("🚀 Start Auto-Pilot (5 Min)", use_container_width=True, help="Har 5 minute mein apne aap scan karega."):
+    if st.button("🚀 Start Auto-Pilot (5 Min)", use_container_width=True):
         st.session_state['auto_scan'] = True
 with c3:
     if st.button("🛑 Stop Auto-Pilot", use_container_width=True):
         st.session_state['auto_scan'] = False
 
 # ==========================================
-# 6. SCANNER ENGINE & PRO RESULTS
+# 6. SCANNER ENGINE
 # ==========================================
 if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
     st.session_state['run_once'] = False
@@ -201,21 +191,14 @@ if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
     progress_bar.empty()
     st.toast("Scan Complete!", icon="✅")
     
-    # === PRO RESULTS DISPLAY ===
     if len(results) > 0:
         st.success(f"🔥 {len(results)} High-Momentum Signals Found!")
         result_df = pd.DataFrame(results)
-        
-        st.dataframe(
-            result_df,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Signal": st.column_config.TextColumn("Signal"),
-                "RSI": st.column_config.ProgressColumn("RSI Strength", format="%d", min_value=0, max_value=100),
-                 "Price (₹)": st.column_config.NumberColumn("Price (₹)", format="₹%.2f"),
-            }
-        )
+        st.dataframe(result_df, use_container_width=True, hide_index=True, column_config={
+            "Signal": st.column_config.TextColumn("Signal"),
+            "RSI": st.column_config.ProgressColumn("RSI Strength", format="%d", min_value=0, max_value=100),
+            "Price (₹)": st.column_config.NumberColumn("Price (₹)", format="₹%.2f"),
+        })
     else:
         st.info("Currently No High-Probability Setups. Market might be sideways.")
         
