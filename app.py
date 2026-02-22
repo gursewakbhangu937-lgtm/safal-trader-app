@@ -6,21 +6,21 @@ import time
 import uuid 
 
 # ==========================================
-# 1. PAGE SETUP & MOBILE-SMOOTH DIGITAL WALLPAPER
+# 1. PAGE SETUP & STRONG ANTI-REFRESH WALLPAPER
 # ==========================================
 st.set_page_config(page_title="The Safal Trader Ultra Pro", page_icon="📈", layout="wide")
 
 page_bg_pro = """
 <style>
-/* MOBILE ANTI-REFRESH & SMOOTH SCROLLING LOCK */
-html, body, [data-testid="stAppViewContainer"] {
-    overscroll-behavior-y: none !important; /* Yeh galti se page refresh hone se rokega */
+/* 🚀 SUPER STRONG MOBILE ANTI-REFRESH LOCK */
+html, body {
+    overscroll-behavior-y: contain !important; /* Browser ko refresh command lene se rokega */
     overscroll-behavior-x: none !important;
-    -webkit-overflow-scrolling: touch; /* Mobile par makkhan jaisi scrolling ke liye */
+    background-color: #0e1117;
 }
 
-/* Digital Wallpaper */
-[data-testid="stAppViewContainer"] {
+.stApp, [data-testid="stAppViewContainer"] {
+    overscroll-behavior-y: contain !important;
     background-color: #0e1117; 
     background-image: 
         radial-gradient(at 50% 50%, rgba(41, 98, 255, 0.15) 0%, transparent 60%),
@@ -30,16 +30,17 @@ html, body, [data-testid="stAppViewContainer"] {
     background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
     background-attachment: fixed;
 }
+
 [data-testid="stHeader"] { background-color: rgba(0,0,0,0); }
 .stMarkdown, .stTitle, .stHeader, .stSubheader, .stText, p, h1, h2, h3, label, span { color: #E0E3EB !important; text-shadow: 0px 1px 2px rgba(0,0,0,0.5); }
 
-/* Table Mobile Fix */
+/* Table ke andar touch lock */
 [data-testid="stDataFrame"] { 
     background-color: rgba(30, 34, 45, 0.8); 
     border: 1px solid rgba(255,255,255,0.1); 
     border-radius: 10px; 
     padding: 10px; 
-    touch-action: pan-y; /* Table ke andar atakne se rokega */
+    overscroll-behavior-y: contain !important; /* Table scroll karte waqt page refresh na ho */
 }
 
 div.stButton > button:first-child { background-color: #2962FF; color: white; border: none; border-radius: 6px; font-weight: bold; box-shadow: 0 4px 6px rgba(41, 98, 255, 0.2); transition: all 0.3s ease; }
@@ -52,8 +53,8 @@ st.markdown(page_bg_pro, unsafe_allow_html=True)
 # 2. ANTI-PIRACY & LOGIN SYSTEM (SECURITY WALL)
 # ==========================================
 VALID_USERS = {
-    "gursewak": "safal123",  # Admin
-    "client1": "trade2026",  # Demo Client
+    "gursewak": "safal123",  
+    "client1": "trade2026",  
 }
 
 @st.cache_resource
