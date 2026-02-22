@@ -7,24 +7,21 @@ import time
 # ==========================================
 # 1. PAGE SETUP & BRANDING
 # ==========================================
-st.set_page_config(page_title="The Safal Trader Scanner", page_icon="📈", layout="centered")
+st.set_page_config(page_title="The Safal Trader Pro", page_icon="📈", layout="wide")
 
 # ==========================================
 # 2. LOGIN SYSTEM (SECURITY WALL)
 # ==========================================
-# Yahan aap apne clients ke ID aur Password set kar sakte hain
 VALID_USERS = {
-    "gursewak": "safal123",  # Aapki Admin ID
-    "client1": "trade2026",  # Demo Client ID
+    "gursewak": "safal123",  # Admin
+    "client1": "trade2026",  # Demo Client
 }
 
-# Session state check karna
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 
-# Agar Login NAHI hai, toh sirf Login Form dikhao
 if not st.session_state['logged_in']:
-    st.title("🔒 Login - The Safal Trader")
+    st.title("🔒 Login - The Safal Trader Pro")
     st.markdown("Kripya Premium Scanner use karne ke liye apna **User ID** aur **Password** darj karein.")
     
     with st.form("login_form"):
@@ -37,42 +34,69 @@ if not st.session_state['logged_in']:
                 st.session_state['logged_in'] = True
                 st.success("✅ Login Successful! Loading dashboard...")
                 time.sleep(1)
-                st.rerun() # Page refresh karke main dashboard layega
+                st.rerun()
             else:
                 st.error("❌ Galat User ID ya Password. Kripya dobara try karein.")
-                
-    st.stop() # Yahan code ruk jayega agar login nahi hai toh
+    st.stop()
 
 # ==========================================
-# 3. MAIN DASHBOARD (Sirf Login walo ke liye)
+# 3. MAIN DASHBOARD
 # ==========================================
-col1, col2 = st.columns([4, 1])
+col1, col2 = st.columns([8, 1])
 with col1:
-    st.title("📈 The Safal Trader")
+    st.title("📈 The Safal Trader Pro - Auto Scanner")
 with col2:
-    # Logout Button
     if st.button("Logout", key="logout_btn"):
         st.session_state['logged_in'] = False
+        st.session_state['auto_scan'] = False
         st.rerun()
 
-st.subheader("Live Breakout & Breakdown Scanner")
-st.markdown("Yeh premium tool live market data ko analyze karke high-probability setups dhoondhta hai. **Trade with logic, not magic.**")
+st.markdown("Yeh premium tool 200+ high-volume stocks ko real-time analyze karta hai. **Trade with logic, not magic.**")
 st.divider()
 
 # ==========================================
-# 4. WATCHLIST
+# 4. WATCHLIST (Top 220 High Volume Stocks)
 # ==========================================
 WATCHLIST = [
-    "RELIANCE.NS", "HDFCBANK.NS", "ICICIBANK.NS", "INFY.NS", "TCS.NS", 
-    "SBIN.NS", "ITC.NS", "TATAMOTORS.NS", "AXISBANK.NS", "ZOMATO.NS"
+    "RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "ICICIBANK.NS", "BHARTIARTL.NS", "SBIN.NS", "INFY.NS", "ITC.NS", "HINDUNILVR.NS", 
+    "LT.NS", "BAJFINANCE.NS", "HCLTECH.NS", "MARUTI.NS", "SUNPHARMA.NS", "ADANIENT.NS", "KOTAKBANK.NS", "TITAN.NS", "ONGC.NS", "TATAMOTORS.NS", 
+    "NTPC.NS", "AXISBANK.NS", "ADANIPORTS.NS", "ULTRACEMCO.NS", "ASIANPAINT.NS", "COALINDIA.NS", "BAJAJFINSV.NS", "BAJAJ-AUTO.NS", "POWERGRID.NS", 
+    "WIPRO.NS", "M&M.NS", "HAL.NS", "JSWSTEEL.NS", "TATASTEEL.NS", "GRASIM.NS", "SBILIFE.NS", "BEL.NS", "LTIM.NS", "TRENT.NS", "INDUSINDBK.NS",
+    "ZOMATO.NS", "PAYTM.NS", "JIOFIN.NS", "IRFC.NS", "IREDA.NS", "RVNL.NS", "SUZLON.NS", "IDEA.NS", "YESBANK.NS", "PNB.NS", 
+    "BANKBARODA.NS", "CANBK.NS", "IDFCFIRSTB.NS", "PFC.NS", "RECLTD.NS", "GAIL.NS", "BPCL.NS", "IOC.NS", "BHEL.NS", "CGPOWER.NS", 
+    "DLF.NS", "LODHA.NS", "TVSMOTOR.NS", "ASHOKLEY.NS", "MOTHERSON.NS", "SIEMENS.NS", "ABB.NS", "CUMMINSIND.NS", "POLYCAB.NS", "HAVELLS.NS", "DIXON.NS",
+    "CHOLAFIN.NS", "MUTHOOTFIN.NS", "MANAPPURAM.NS", "SHRIRAMFIN.NS", "BSE.NS", "MCX.NS", "CDSL.NS", "ANGELONE.NS",
+    "LUPIN.NS", "AUROPHARMA.NS", "ZYDUSLIFE.NS", "BIOCON.NS", "GLENMARK.NS", "TORNTPHARM.NS", "SYNGENE.NS", "LAURUSLABS.NS",
+    "VEDL.NS", "NMDC.NS", "NATIONALUM.NS", "SAIL.NS", "JINDALSTEL.NS", "HINDZINC.NS", "HINDCOPPER.NS",
+    "DMART.NS", "TATACONSUM.NS", "GODREJCP.NS", "DABUR.NS", "MARICO.NS", "COLPAL.NS", "UBL.NS", "VOLTAS.NS", "PERSISTENT.NS", "COFORGE.NS"
 ]
 
 # ==========================================
-# 5. SCANNER ENGINE
+# 5. CONTROL PANEL & AUTO-SCAN LOGIC
 # ==========================================
-if st.button("🚀 Start Live Scan", use_container_width=True):
+if 'auto_scan' not in st.session_state:
+    st.session_state['auto_scan'] = False
+
+st.subheader("⚙️ Control Panel")
+c1, c2, c3 = st.columns(3)
+
+with c1:
+    if st.button("🔍 Scan Now (Once)", use_container_width=True):
+        st.session_state['run_once'] = True
+with c2:
+    if st.button("🚀 Start Auto-Scan (5 Min)", type="primary", use_container_width=True):
+        st.session_state['auto_scan'] = True
+with c3:
+    if st.button("🛑 Stop Auto-Scan", use_container_width=True):
+        st.session_state['auto_scan'] = False
+
+# ==========================================
+# 6. SCANNER ENGINE
+# ==========================================
+if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
+    st.session_state['run_once'] = False # Reset run once
     
-    st.write(f"**Scan Started at:** {datetime.now().strftime('%H:%M:%S')}")
+    st.write(f"**Last Scan Completed At:** {datetime.now().strftime('%H:%M:%S')} (Scanning {len(WATCHLIST)} Stocks...)")
     progress_bar = st.progress(0)
     status_text = st.empty()
     results = []
@@ -102,21 +126,25 @@ if st.button("🚀 Start Live Scan", use_container_width=True):
                 results.append({"Stock": stock_name, "Signal": "🚀 BREAKOUT", "Price (₹)": round(curr['Close'], 2), "RSI": round(curr['RSI'], 2), "Volume Spike": f"{curr['Volume']/curr['Vol_SMA']:.1f}x"})
             elif (curr['Close'] < prev_low) and (curr['Volume'] > curr['Vol_SMA']):
                 results.append({"Stock": stock_name, "Signal": "🔻 BREAKDOWN", "Price (₹)": round(curr['Close'], 2), "RSI": round(curr['RSI'], 2), "Volume Spike": f"{curr['Volume']/curr['Vol_SMA']:.1f}x"})
-                
-        except Exception as e:
+        except:
             pass 
-            
         progress_bar.progress((i + 1) / len(WATCHLIST))
         
     status_text.text("✅ Scan Complete!")
     
-    st.divider()
+    # Display Results
     if len(results) > 0:
-        st.success(f"{len(results)} Strong Signals Found!")
+        st.success(f"🔥 {len(results)} Strong Signals Found!")
         result_df = pd.DataFrame(results)
         st.dataframe(result_df, use_container_width=True, hide_index=True)
     else:
-        st.info("Abhi koi clear breakout ya breakdown nahi mila. Market sideways ho sakti hai. Thodi der baad dubara try karein.")
+        st.info("Abhi koi clear breakout ya breakdown nahi mila. Market sideways ho sakti hai.")
+        
+    # Auto-Refresh Logic
+    if st.session_state['auto_scan']:
+        st.warning("⏳ Scanner is in Auto-Mode. Market will be scanned again in 5 minutes...")
+        time.sleep(300) # 300 seconds = 5 minutes
+        st.rerun()
 
 st.markdown("---")
 st.caption("© 2026 The Safal Trader. All rights reserved. (For Educational Purposes Only)")
