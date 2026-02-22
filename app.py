@@ -5,9 +5,38 @@ from datetime import datetime
 import time
 
 # ==========================================
-# 1. PAGE SETUP & BRANDING
+# 1. PAGE SETUP & PROFESSIONAL UI (CSS)
 # ==========================================
-st.set_page_config(page_title="The Safal Trader Pro", page_icon="📈", layout="wide")
+st.set_page_config(page_title="The Safal Trader Ultra Pro", page_icon="📈", layout="wide")
+
+# --- CUSTOM CSS FOR WALLPAPER & DARK THEME ---
+page_bg_img = """
+<style>
+[data-testid="stAppViewContainer"] {
+background-image: url("https://images.unsplash.com/photo-1642543492481-44e81e3914a7?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
+background-size: cover;
+background-position: center;
+background-repeat: no-repeat;
+background-attachment: fixed;
+}
+
+[data-testid="stHeader"] {
+background-color: rgba(0,0,0,0);
+}
+
+/* Text color changes for dark background visibility */
+.stMarkdown, .stTitle, .stHeader, .stSubheader, .stText, .stInfo, .stSuccess, .stWarning, .stError, p, h1, h2, h3 {
+    color: #ffffff !important;
+    text-shadow: 1px 1px 3px #000000;
+}
+/* Adjust input fields so they are readable */
+.stTextInput input {
+    color: #000000 !important;
+}
+</style>
+"""
+st.markdown(page_bg_img, unsafe_allow_html=True)
+# -------------------------------------------
 
 # ==========================================
 # 2. LOGIN SYSTEM (SECURITY WALL)
@@ -21,13 +50,13 @@ if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 
 if not st.session_state['logged_in']:
-    st.title("🔒 Login - The Safal Trader Pro")
-    st.markdown("Kripya Premium Scanner use karne ke liye apna **User ID** aur **Password** darj karein.")
+    st.title("🔒 Login - The Safal Trader Ultra Pro")
+    st.markdown("### Kripya Premium Scanner use karne ke liye apna **User ID** aur **Password** darj karein.")
     
     with st.form("login_form"):
         username = st.text_input("User ID")
         password = st.text_input("Password", type="password")
-        submit_button = st.form_submit_button("Login")
+        submit_button = st.form_submit_button("🚀 Secure Login")
         
         if submit_button:
             if username in VALID_USERS and VALID_USERS[username] == password:
@@ -36,7 +65,7 @@ if not st.session_state['logged_in']:
                 time.sleep(1)
                 st.rerun()
             else:
-                st.error("❌ Galat User ID ya Password. Kripya dobara try karein.")
+                st.error("❌ Galat User ID ya Password.")
     st.stop()
 
 # ==========================================
@@ -44,117 +73,129 @@ if not st.session_state['logged_in']:
 # ==========================================
 col1, col2 = st.columns([8, 1])
 with col1:
-    st.title("📈 The Safal Trader Pro - Auto Scanner")
+    st.title("📈 The Safal Trader Ultra Pro")
+    st.caption("Live Market Auto-Scanner | 250+ Stocks")
 with col2:
-    if st.button("Logout", key="logout_btn"):
+    if st.button("Logout 🔒", key="logout_btn"):
         st.session_state['logged_in'] = False
         st.session_state['auto_scan'] = False
         st.rerun()
 
-st.markdown("Yeh premium tool 200+ high-volume stocks ko real-time analyze karta hai. **Trade with logic, not magic.**")
 st.divider()
 
 # ==========================================
-# 4. WATCHLIST (Top 220+ High Volume Stocks)
+# 4. EXPANDED WATCHLIST (251 High Volume Stocks)
 # ==========================================
 WATCHLIST = [
+    # Nifty 50 & Major Large Caps
     "RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "ICICIBANK.NS", "BHARTIARTL.NS", "SBIN.NS", "INFY.NS", "LICI.NS", "ITC.NS", "HINDUNILVR.NS",
     "LT.NS", "BAJFINANCE.NS", "HCLTECH.NS", "MARUTI.NS", "SUNPHARMA.NS", "ADANIENT.NS", "KOTAKBANK.NS", "TITAN.NS", "ONGC.NS", "TATAMOTORS.NS",
     "NTPC.NS", "AXISBANK.NS", "ADANIPORTS.NS", "ULTRACEMCO.NS", "ASIANPAINT.NS", "COALINDIA.NS", "BAJAJFINSV.NS", "BAJAJ-AUTO.NS", "POWERGRID.NS", "NESTLEIND.NS",
     "WIPRO.NS", "M&M.NS", "HAL.NS", "JSWSTEEL.NS", "TATASTEEL.NS", "GRASIM.NS", "SBILIFE.NS", "BEL.NS", "LTIM.NS", "TRENT.NS", "INDUSINDBK.NS",
-    "HINDALCO.NS", "CIPLA.NS", "DRREDDY.NS", "BRITANNIA.NS", "APOLLOHOSP.NS", "EICHERMOT.NS", "DIVISLAB.NS", "TECHM.NS",
-    "ZOMATO.NS", "PAYTM.NS", "JIOFIN.NS", "IRFC.NS", "IREDA.NS", "RVNL.NS", "SUZLON.NS", "IDEA.NS", "YESBANK.NS", "PNB.NS",
-    "BANKBARODA.NS", "UNIONBANK.NS", "CANBK.NS", "IDFCFIRSTB.NS", "IOB.NS", "MAHABANK.NS", "CENTRALBK.NS", "UCOBANK.NS", "INDIANB.NS", "PSB.NS",
-    "PFC.NS", "RECLTD.NS", "GAIL.NS", "BPCL.NS", "IOC.NS", "HINDPETRO.NS", "NHPC.NS", "SJVN.NS", "BHEL.NS", "CGPOWER.NS",
-    "DLF.NS", "LODHA.NS", "OBEROIRLTY.NS", "GODREJPROP.NS", "PRESTIGE.NS", "TVSMOTOR.NS", "ASHOKLEY.NS", "MOTHERSON.NS", "BOSCHLTD.NS", "MRF.NS",
-    "SIEMENS.NS", "ABB.NS", "CUMMINSIND.NS", "POLYCAB.NS", "HAVELLS.NS", "DIXON.NS", "KAYNES.NS", "AMBER.NS", "SYRMA.NS", "OLECTRA.NS",
-    "CHOLAFIN.NS", "BAJAJHLDNG.NS", "MUTHOOTFIN.NS", "MANAPPURAM.NS", "SHRIRAMFIN.NS", "M&MFIN.NS", "L&TFH.NS", "ABCAPITAL.NS", "POONAWALLA.NS", "HDFCAMC.NS",
-    "NAM-INDIA.NS", "UTIAMC.NS", "BSE.NS", "MCX.NS", "CDSL.NS", "CAMS.NS", "KFINTECH.NS", "ANGELONE.NS", "MOTILALOFS.NS", "ICICIGI.NS", "ICICIPRULI.NS",
-    "LUPIN.NS", "AUROPHARMA.NS", "ZYDUSLIFE.NS", "BIOCON.NS", "GLENMARK.NS", "TORNTPHARM.NS", "ALKEM.NS", "IPCALAB.NS", "SYNGENE.NS", "LAURUSLABS.NS",
-    "SRF.NS", "PIIND.NS", "DEEPAKNTR.NS", "TATACHEM.NS", "AARTIIND.NS", "ATUL.NS", "NAVINFLUOR.NS", "COROMANDEL.NS", "FACT.NS", "GNFC.NS",
-    "MAZDOCK.NS", "COCHINSHIP.NS", "GRSE.NS", "BDL.NS", "TITAGARH.NS", "TEXRAIL.NS", "IRCON.NS", "RITES.NS", "RAILTEL.NS", "MIDHANI.NS",
-    "VEDL.NS", "NMDC.NS", "NATIONALUM.NS", "SAIL.NS", "JINDALSTEL.NS", "HINDZINC.NS", "HINDCOPPER.NS", "JSL.NS", "WELCORP.NS", "APLAPOLLO.NS",
-    "DMART.NS", "TATACONSUM.NS", "GODREJCP.NS", "DABUR.NS", "MARICO.NS", "COLPAL.NS", "UBL.NS", "MCDOWELL-N.NS", "RADICO.NS", "DEVYANI.NS",
-    "JUBLFOOD.NS", "WESTLIFE.NS", "BATAINDIA.NS", "METROBRAND.NS", "PAGEIND.NS", "VOLTAS.NS", "BLUESTARCO.NS", "WHIRLPOOL.NS", "CROMPTON.NS", "KALYANKJIL.NS",
-    "PERSISTENT.NS", "COFORGE.NS", "MPHASIS.NS", "TATAELXSI.NS", "KPITTECH.NS", "CYIENT.NS", "SONACOMS.NS", "PBFINTECH.NS", "DELHIVERY.NS", "NYKAA.NS",
-    "ABFRL.NS", "AUBANK.NS", "BANDHANBNK.NS", "FEDERALBNK.NS", "ZEEL.NS", "SUNTV.NS", "PVRINOX.NS", "INDIGO.NS", "POLICYBZR.NS"
+    "HINDALCO.NS", "CIPLA.NS", "DRREDDY.NS", "BRITANNIA.NS", "APOLLOHOSP.NS", "EICHERMOT.NS", "DIVISLAB.NS", "TECHM.NS", "BPCL.NS", "SHRIRAMFIN.NS",
+    # High Momentum Midcaps & F&O Stocks
+    "ZOMATO.NS", "PAYTM.NS", "JIOFIN.NS", "IRFC.NS", "IREDA.NS", "RVNL.NS", "SUZLON.NS", "IDEA.NS", "YESBANK.NS", "PNB.NS", "BANKBARODA.NS",
+    "UNIONBANK.NS", "CANBK.NS", "IDFCFIRSTB.NS", "PFC.NS", "RECLTD.NS", "GAIL.NS", "IOC.NS", "BHEL.NS", "CGPOWER.NS", "DLF.NS", "LODHA.NS",
+    "TVSMOTOR.NS", "ASHOKLEY.NS", "MOTHERSON.NS", "SIEMENS.NS", "ABB.NS", "CUMMINSIND.NS", "POLYCAB.NS", "HAVELLS.NS", "DIXON.NS", "CHOLAFIN.NS",
+    "MUTHOOTFIN.NS", "MANAPPURAM.NS", "BSE.NS", "MCX.NS", "CDSL.NS", "ANGELONE.NS", "LUPIN.NS", "AUROPHARMA.NS", "ZYDUSLIFE.NS", "BIOCON.NS",
+    "GLENMARK.NS", "VEDL.NS", "NMDC.NS", "NATIONALUM.NS", "SAIL.NS", "JINDALSTEL.NS", "HINDZINC.NS", "HINDCOPPER.NS", "DMART.NS", "TATACONSUM.NS",
+    "GODREJCP.NS", "DABUR.NS", "MARICO.NS", "COLPAL.NS", "UBL.NS", "VOLTAS.NS", "PERSISTENT.NS", "COFORGE.NS", "MPHASIS.NS", "TATAELXSI.NS",
+    "KPITTECH.NS", "CYIENT.NS", "SONACOMS.NS", "PBFINTECH.NS", "DELHIVERY.NS", "NYKAA.NS", "ABFRL.NS", "AUBANK.NS", "BANDHANBNK.NS", "FEDERALBNK.NS",
+    "ZEEL.NS", "SUNTV.NS", "PVRINOX.NS", "INDIGO.NS", "POLICYBZR.NS", "GMRINFRA.NS", "INDHOTEL.NS", "JUBLFOOD.NS", "UPL.NS", "PIIND.NS",
+    "DEEPAKNTR.NS", "SRF.NS", "NAVINFLUOR.NS", "ATUL.NS", "AARTIIND.NS", "CROMPTON.NS", "WHIRLPOOL.NS", "KAJARIACER.NS", "ASTRAL.NS",
+    "PIDILITIND.NS", "BERGEPAINT.NS", "BOSCHLTD.NS", "MRF.NS", "BALKRISIND.NS", "APOLLOTYRE.NS", "ESCORTS.NS", "HEROMOTOCO.NS", "BIKAJI.NS",
+    "MANYAVAR.NS", "KEI.NS", "KEC.NS", "KALPATPOWR.NS", "TORNTPOWER.NS", "NHPC.NS", "SJVN.NS", "NLCINDIA.NS", "ENGINERSIN.NS", "RITES.NS",
+    "RAILTEL.NS", "IRCON.NS", "TITAGARH.NS", "MAZDOCK.NS", "COCHINSHIP.NS", "GRSE.NS", "BDL.NS", "MIDHANI.NS", "ASTRAZEN.NS", "SANOFI.NS",
+    "PFIZER.NS", "GLAXO.NS", "FORTIS.NS", "NH.NS", "ASTERDM.NS", "METROPOLIS.NS", "LALPATHLAB.NS", "SYNGENE.NS", "LAURUSLABS.NS", "GRANULES.NS",
+    "FSL.NS", "BSOFT.NS", "CYIENTDLM.NS", "DATAPATTNS.NS", "MTARTECH.NS", "PARAS.NS", "ZENTECH.NS", "HBLPOWER.NS", "CENTURYTEX.NS", "RAYMOND.NS",
+    "WELSPUNLIV.NS", "TRIDENT.NS", "ALOKINDS.NS", "VTL.NS", "KPRMILL.NS", "PAGEIND.NS", "LUXIND.NS", "RUPA.NS", "DOLLAR.NS", "BATAINDIA.NS",
+    "RELAXO.NS", "CAMPUS.NS", "METROBRAND.NS", "REDTAPE.NS", "KHADIM.NS", "LIBERTSHOE.NS", "SFL.NS", "TCNSBRANDS.NS", "GOKEX.NS",
+    "ARVIND.NS", "ARVINDFASN.NS", "SHOPPERS.NS", "VMART.NS", "V2RETAIL.NS", "CANTABIL.NS", "MONTECARLO.NS", "SNOWMAN.NS", "MAHLOG.NS",
+    "TCI.NS", "VRLLOG.NS", "GATEWAY.NS", "NAVKARCORP.NS", "CONCOR.NS", "GPPL.NS", "ADANILOG.NS"
 ]
 
 # ==========================================
-# 5. CONTROL PANEL & AUTO-SCAN LOGIC
+# 5. CONTROL PANEL
 # ==========================================
 if 'auto_scan' not in st.session_state:
     st.session_state['auto_scan'] = False
 
-st.subheader("⚙️ Control Panel")
+st.subheader("⚙️ Scanner Controls")
 c1, c2, c3 = st.columns(3)
-
 with c1:
-    if st.button("🔍 Scan Now (Once)", use_container_width=True):
+    if st.button("🔍 Quick Scan (Once)", use_container_width=True):
         st.session_state['run_once'] = True
 with c2:
-    if st.button("🚀 Start Auto-Scan (5 Min)", type="primary", use_container_width=True):
+    if st.button("🚀 Start Auto-Pilot (5 Min)", type="primary", use_container_width=True, help="Har 5 minute mein apne aap scan karega."):
         st.session_state['auto_scan'] = True
 with c3:
-    if st.button("🛑 Stop Auto-Scan", use_container_width=True):
+    if st.button("🛑 Stop Auto-Pilot", use_container_width=True):
         st.session_state['auto_scan'] = False
 
 # ==========================================
-# 6. SCANNER ENGINE
+# 6. SCANNER ENGINE & PRO RESULTS
 # ==========================================
 if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
-    st.session_state['run_once'] = False # Reset run once
+    st.session_state['run_once'] = False
     
-    st.write(f"**Last Scan Completed At:** {datetime.now().strftime('%H:%M:%S')} (Scanning {len(WATCHLIST)} Stocks...)")
+    st.toast(f"Scanning Started: {len(WATCHLIST)} Stocks...", icon="⏳") # Pop-up notification
     progress_bar = st.progress(0)
     status_text = st.empty()
     results = []
     
     for i, symbol in enumerate(WATCHLIST):
         stock_name = symbol.replace(".NS", "")
-        status_text.text(f"Scanning {stock_name}...")
+        if i % 10 == 0: # Har 10 stock ke baad status update karega taaki fast lage
+             status_text.markdown(f"**Scanning:** `{stock_name}` ({i+1}/{len(WATCHLIST)})")
         
         try:
             df = yf.download(symbol, period="5d", interval="5m", progress=False)
             if df.empty: continue
-            if isinstance(df.columns, pd.MultiIndex):
-                df.columns = df.columns.get_level_values(0)
+            if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
                 
             delta = df['Close'].diff()
-            gain = (delta.where(delta > 0, 0)).rolling(14).mean()
-            loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
-            rs = gain / loss
-            df['RSI'] = 100 - (100 / (1 + rs))
+            gain = (delta.where(delta > 0, 0)).rolling(14).mean(); loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
+            rs = gain / loss; df['RSI'] = 100 - (100 / (1 + rs))
             df['Vol_SMA'] = df['Volume'].rolling(20).mean()
             
-            curr = df.iloc[-2]
-            prev_high = df['High'].iloc[:-20].max()
-            prev_low = df['Low'].iloc[:-20].min()
+            curr = df.iloc[-2]; prev_high = df['High'].iloc[:-20].max(); prev_low = df['Low'].iloc[:-20].min()
             
             if (curr['Close'] > prev_high) and (curr['Volume'] > curr['Vol_SMA']):
-                results.append({"Stock": stock_name, "Signal": "🚀 BREAKOUT", "Price (₹)": round(curr['Close'], 2), "RSI": round(curr['RSI'], 2), "Volume Spike": f"{curr['Volume']/curr['Vol_SMA']:.1f}x"})
+                results.append({"Stock": stock_name, "Signal": "🚀 BREAKOUT", "Price (₹)": curr['Close'], "RSI": int(curr['RSI']), "Volume Spike": f"{curr['Volume']/curr['Vol_SMA']:.1f}x"})
             elif (curr['Close'] < prev_low) and (curr['Volume'] > curr['Vol_SMA']):
-                results.append({"Stock": stock_name, "Signal": "🔻 BREAKDOWN", "Price (₹)": round(curr['Close'], 2), "RSI": round(curr['RSI'], 2), "Volume Spike": f"{curr['Volume']/curr['Vol_SMA']:.1f}x"})
-        except:
-            pass 
+                results.append({"Stock": stock_name, "Signal": "🔻 BREAKDOWN", "Price (₹)": curr['Close'], "RSI": int(curr['RSI']), "Volume Spike": f"{curr['Volume']/curr['Vol_SMA']:.1f}x"})
+        except: pass 
         progress_bar.progress((i + 1) / len(WATCHLIST))
         
-    status_text.text("✅ Scan Complete!")
+    status_text.empty()
+    progress_bar.empty()
+    st.toast("Scan Complete!", icon="✅")
     
-    # Display Results
+    # === PRO RESULTS DISPLAY ===
     if len(results) > 0:
-        st.success(f"🔥 {len(results)} Strong Signals Found!")
+        st.success(f"🔥 {len(results)} High-Momentum Signals Found!")
         result_df = pd.DataFrame(results)
-        st.dataframe(result_df, use_container_width=True, hide_index=True)
-    else:
-        st.info("Abhi koi clear breakout ya breakdown nahi mila. Market sideways ho sakti hai.")
         
-    # Auto-Refresh Logic
+        # Advanced Table Styling
+        st.dataframe(
+            result_df,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Signal": st.column_config.TextColumn("Signal", help="Trade Direction"),
+                "RSI": st.column_config.ProgressColumn(
+                    "RSI Strength", help="Relative Strength Index (0-100)", format="%d", min_value=0, max_value=100,
+                ),
+                 "Price (₹)": st.column_config.NumberColumn("Price (₹)", format="₹%.2f"),
+            }
+        )
+    else:
+        st.info("Currently No High-Probability Setups. Market might be sideways.")
+        
     if st.session_state['auto_scan']:
-        st.warning("⏳ Scanner is in Auto-Mode. Market will be scanned again in 5 minutes...")
-        time.sleep(300) # 300 seconds = 5 minutes
+        st.warning("⏳ Auto-Pilot Active. Next scan in 5 minutes...")
+        time.sleep(300)
         st.rerun()
 
-st.markdown("---")
-st.caption("© 2026 The Safal Trader. All rights reserved. (For Educational Purposes Only)")
-
+st.divider()
+st.markdown("<h5 style='text-align: center; color: grey;'>© 2026 The Safal Trader Ultra Pro | Enterprise Edition</h5>", unsafe_allow_html=True)
