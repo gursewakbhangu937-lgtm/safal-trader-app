@@ -166,12 +166,12 @@ with c3:
         st.session_state['auto_scan'] = False
 
 # ==========================================
-# 6. SCANNER ENGINE (Price + Vol + RSI Filter)
+# 6. SCANNER ENGINE (Support & Resistance Near Zone)
 # ==========================================
 if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
     st.session_state['run_once'] = False
     
-    st.toast(f"Market Scan Initiated: {len(WATCHLIST)} Stocks...", icon="⚡") 
+    st.toast(f"Major Levels Scanning: {len(WATCHLIST)} Stocks...", icon="🎯") 
     progress_bar = st.progress(0)
     status_text = st.empty()
     results = []
@@ -179,61 +179,72 @@ if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
     for i, symbol in enumerate(WATCHLIST):
         stock_name = symbol.replace(".NS", "")
         if i % 20 == 0: 
-             status_text.markdown(f"**Scanning:** `{stock_name}`... ({i}/{len(WATCHLIST)})")
+             status_text.markdown(f"**Analyzing Levels:** `{stock_name}`... ({i}/{len(WATCHLIST)})")
         
         try:
-            df = yf.download(symbol, period="5d", interval="5m", progress=False)
-            if df.empty or len(df) < 20: continue
+            # Pichle 1 mahine ka data (Major Levels ke liye)
+            df = yf.download(symbol, period="1mo", interval="5m", progress=False)
+            if df.empty or len(df) < 50: continue
             if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
                 
-            # --- INDICATORS ---
+            curr = df.iloc[-2] # Current Candle
+            current_price = curr['Close']
+            
+            # Major Resistance (Pichle 30 din ka High)
+            major_res = df['High'].max()
+            # Major Support (Pichle 30 din ka Low)
+            major_sup = df['Low'].min()
+            
+            # --- "Near Zone" Logic (1% Range) ---
+            # Agar price Resistance ke 1% neeche hai
+            res_zone = major_res * 0.99 
+            # Agar price Support ke 1% upar hai
+            sup_zone = major_sup * 1.01
+            
+            # Indicators for confirmation
             delta = df['Close'].diff()
             gain = (delta.where(delta > 0, 0)).rolling(14).mean()
             loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
             rs = gain / loss
-            df['RSI'] = 100 - (100 / (1 + rs))
-            df['Vol_SMA_15'] = df['Volume'].rolling(15).mean()
-            
-            curr = df.iloc[-2] 
-            avg_vol_15 = curr['Vol_SMA_15']
-            rsi_val = curr['RSI']
-            
-            # Breakout/Breakdown Levels
-            prev_high = df['High'].iloc[:-20].max()
-            prev_low = df['Low'].iloc[:-20].min()
-            
-            # --- TRIPLE FILTER LOGIC ---
-            # 1. Price Breakout + Volume Spike + RSI > 60
-            if (curr['Close'] > prev_high) and (curr['Volume'] > avg_vol_15) and (rsi_val > 60):
+            rsi_val = 100 - (100 / (1 + rs)).iloc[-2]
+
+            # 1. Near Resistance Check
+            if current_price >= res_zone and current_price <= major_res:
+                dist = ((major_res - current_price) / current_price) * 100
                 results.append({
                     "Stock": stock_name, 
-                    "Signal": "🚀 BREAKOUT", 
-                    "Price (₹)": curr['Close'], 
-                    "RSI": int(rsi_val), 
-                    "Vol vs Avg": f"{(curr['Volume']/avg_vol_15):.1f}x"
+                    "Status": "⚠️ NEAR RESISTANCE", 
+                    "Current Price": current_price, 
+                    "Major High": major_res,
+                    "Distance %": f"{dist:.2f}%",
+                    "RSI": int(rsi_val)
                 })
-            # 2. Price Breakdown + Volume Spike + RSI < 40
-            elif (curr['Close'] < prev_low) and (curr['Volume'] > avg_vol_15) and (rsi_val < 40):
+            
+            # 2. Near Support Check
+            elif current_price <= sup_zone and current_price >= major_sup:
+                dist = ((current_price - major_sup) / current_price) * 100
                 results.append({
                     "Stock": stock_name, 
-                    "Signal": "🔻 BREAKDOWN", 
-                    "Price (₹)": curr['Close'], 
-                    "RSI": int(rsi_val), 
-                    "Vol vs Avg": f"{(curr['Volume']/avg_vol_15):.1f}x"
+                    "Status": "✅ NEAR SUPPORT", 
+                    "Current Price": current_price, 
+                    "Major Low": major_sup,
+                    "Distance %": f"{dist:.2f}%",
+                    "RSI": int(rsi_val)
                 })
         except: pass 
         progress_bar.progress((i + 1) / len(WATCHLIST))
         
     status_text.empty()
     progress_bar.empty()
-    st.toast("Scan Complete!", icon="✅")
+    st.toast("Analysis Complete!", icon="✅")
     
     if len(results) > 0:
-        st.success(f"🔥 {len(results)} Strong Momentum Signals Found!")
+        st.success(f"🔍 {len(results)} Stocks Near Major Support/Resistance Found!")
         result_df = pd.DataFrame(results)
         st.dataframe(result_df, use_container_width=True, hide_index=True, column_config={
-            "RSI": st.column_config.ProgressColumn("RSI Strength", format="%d", min_value=0, max_value=100),
-            "Price (₹)": st.column_config.NumberColumn("Price (₹)", format="₹%.2f"),
+            "Distance %": st.column_config.TextColumn("Gap to Level"),
+            "Current Price": st.column_config.NumberColumn("Price", format="₹%.2f"),
+            "RSI": st.column_config.ProgressColumn("Momentum (RSI)", min_value=0, max_value=100),
         })
     else:
-        st.info("No stocks matching Price + Volume + RSI criteria.")
+        st.info("No stocks currently in the 1% range of major levels.")
