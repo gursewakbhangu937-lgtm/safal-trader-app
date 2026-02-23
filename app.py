@@ -166,12 +166,12 @@ with c3:
         st.session_state['auto_scan'] = False
 
 # ==========================================
-# 6. SCANNER ENGINE (Support & Resistance Near Zone)
+# 6. SCANNER ENGINE (15-Min Support/Resistance Reversal)
 # ==========================================
 if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
     st.session_state['run_once'] = False
     
-    st.toast(f"Major Levels Scanning: {len(WATCHLIST)} Stocks...", icon="🎯") 
+    st.toast("Scanning 15-Min Reversal Patterns...", icon="🕯️") 
     progress_bar = st.progress(0)
     status_text = st.empty()
     results = []
@@ -179,72 +179,54 @@ if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
     for i, symbol in enumerate(WATCHLIST):
         stock_name = symbol.replace(".NS", "")
         if i % 20 == 0: 
-             status_text.markdown(f"**Analyzing Levels:** `{stock_name}`... ({i}/{len(WATCHLIST)})")
+             status_text.markdown(f"**Analyzing:** `{stock_name}`... ({i}/{len(WATCHLIST)})")
         
         try:
-            # Pichle 1 mahine ka data (Major Levels ke liye)
-            df = yf.download(symbol, period="1mo", interval="5m", progress=False)
-            if df.empty or len(df) < 50: continue
+            # 15-Minute Timeframe ka data le rahe hain
+            df = yf.download(symbol, period="15d", interval="15m", progress=False)
+            if df.empty or len(df) < 40: continue
             if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
-                
-            curr = df.iloc[-2] # Current Candle
-            current_price = curr['Close']
             
-            # Major Resistance (Pichle 30 din ka High)
-            major_res = df['High'].max()
-            # Major Support (Pichle 30 din ka Low)
-            major_sup = df['Low'].min()
+            # --- 1. LEVELS CALCULATION ---
+            major_res = df['High'].iloc[:-20].max() # Pichle 20 candles ka resistance
+            major_sup = df['Low'].iloc[:-20].min()  # Pichle 20 candles ka support
             
-            # --- "Near Zone" Logic (1% Range) ---
-            # Agar price Resistance ke 1% neeche hai
-            res_zone = major_res * 0.99 
-            # Agar price Support ke 1% upar hai
-            sup_zone = major_sup * 1.01
+            # --- 2. CANDLESTICK LOGIC ---
+            # Last closed candle (indexing -2 as -1 is current incomplete candle)
+            c = df.iloc[-2]
+            body = abs(c['Open'] - c['Close'])
+            total_range = c['High'] - c['Low']
+            upper_wick = c['High'] - max(c['Open'], c['Close'])
+            lower_wick = min(c['Open'], c['Close']) - c['Low']
             
-            # Indicators for confirmation
-            delta = df['Close'].diff()
-            gain = (delta.where(delta > 0, 0)).rolling(14).mean()
-            loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
-            rs = gain / loss
-            rsi_val = 100 - (100 / (1 + rs)).iloc[-2]
+            # A. Green Doji (At Support)
+            # Body choti honi chahiye total range ke mukable (Doji)
+            is_doji = body < (total_range * 0.1)
+            is_green = c['Close'] >= c['Open']
+            
+            # B. Inverted Hammer / Red Doji (At Resistance)
+            # Inverted Hammer: Upper wick body se 2 guna badi honi chahiye
+            is_inv_hammer = upper_wick > (body * 2) and lower_wick < (body * 0.5)
+            is_red = c['Close'] <= c['Open']
+            is_red_doji = is_doji and is_red
 
-            # 1. Near Resistance Check
-            if current_price >= res_zone and current_price <= major_res:
-                dist = ((major_res - current_price) / current_price) * 100
-                results.append({
-                    "Stock": stock_name, 
-                    "Status": "⚠️ NEAR RESISTANCE", 
-                    "Current Price": current_price, 
-                    "Major High": major_res,
-                    "Distance %": f"{dist:.2f}%",
-                    "RSI": int(rsi_val)
-                })
-            
-            # 2. Near Support Check
-            elif current_price <= sup_zone and current_price >= major_sup:
-                dist = ((current_price - major_sup) / current_price) * 100
-                results.append({
-                    "Stock": stock_name, 
-                    "Status": "✅ NEAR SUPPORT", 
-                    "Current Price": current_price, 
-                    "Major Low": major_sup,
-                    "Distance %": f"{dist:.2f}%",
-                    "RSI": int(rsi_val)
-                })
+            # --- 3. SCANNING LOGIC ---
+            # Condition 1: Support ke paas Green Doji
+            if c['Low'] <= (major_sup * 1.005) and is_green and is_doji:
+                results.append({"Stock": stock_name, "Signal": "🟢 DOJI AT SUPPORT", "Price": c['Close'], "Level": "Support", "Type": "Bullish Reversal"})
+
+            # Condition 2: Resistance ke paas Inverted Hammer ya Red Doji
+            elif c['High'] >= (major_res * 0.995) and (is_inv_hammer or is_red_doji):
+                results.append({"Stock": stock_name, "Signal": "🔴 REVERSAL AT RES", "Price": c['Close'], "Level": "Resistance", "Type": "Bearish Reversal"})
+
         except: pass 
         progress_bar.progress((i + 1) / len(WATCHLIST))
         
     status_text.empty()
     progress_bar.empty()
-    st.toast("Analysis Complete!", icon="✅")
     
     if len(results) > 0:
-        st.success(f"🔍 {len(results)} Stocks Near Major Support/Resistance Found!")
-        result_df = pd.DataFrame(results)
-        st.dataframe(result_df, use_container_width=True, hide_index=True, column_config={
-            "Distance %": st.column_config.TextColumn("Gap to Level"),
-            "Current Price": st.column_config.NumberColumn("Price", format="₹%.2f"),
-            "RSI": st.column_config.ProgressColumn("Momentum (RSI)", min_value=0, max_value=100),
-        })
+        st.success(f"🎯 {len(results)} Strong Reversal Setups Found!")
+        st.dataframe(pd.DataFrame(results), use_container_width=True, hide_index=True)
     else:
-        st.info("No stocks currently in the 1% range of major levels.")
+        st.info("Currently no Doji/Inverted Hammer patterns near major levels.")
