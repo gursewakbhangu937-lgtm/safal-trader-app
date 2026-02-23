@@ -166,12 +166,12 @@ with c3:
         st.session_state['auto_scan'] = False
 
 # ==========================================
-# 6. SCANNER ENGINE (15-Min Support/Resistance Reversal)
+# 6. SCANNER ENGINE (15-Min Reversal + Volume Spike)
 # ==========================================
 if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
     st.session_state['run_once'] = False
     
-    st.toast("Scanning 15-Min Reversal Patterns...", icon="🕯️") 
+    st.toast("Scanning High-Volume Reversal Patterns...", icon="📊") 
     progress_bar = st.progress(0)
     status_text = st.empty()
     results = []
@@ -182,42 +182,53 @@ if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
              status_text.markdown(f"**Analyzing:** `{stock_name}`... ({i}/{len(WATCHLIST)})")
         
         try:
-            # 15-Minute Timeframe ka data le rahe hain
             df = yf.download(symbol, period="15d", interval="15m", progress=False)
             if df.empty or len(df) < 40: continue
             if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
             
-            # --- 1. LEVELS CALCULATION ---
-            major_res = df['High'].iloc[:-20].max() # Pichle 20 candles ka resistance
-            major_sup = df['Low'].iloc[:-20].min()  # Pichle 20 candles ka support
+            # --- 1. LEVELS & VOLUME AVG ---
+            major_res = df['High'].iloc[:-20].max()
+            major_sup = df['Low'].iloc[:-20].min()
+            avg_vol_15 = df['Volume'].rolling(15).mean().iloc[-2] # 15 candle volume avg
             
             # --- 2. CANDLESTICK LOGIC ---
-            # Last closed candle (indexing -2 as -1 is current incomplete candle)
             c = df.iloc[-2]
             body = abs(c['Open'] - c['Close'])
             total_range = c['High'] - c['Low']
             upper_wick = c['High'] - max(c['Open'], c['Close'])
             lower_wick = min(c['Open'], c['Close']) - c['Low']
             
-            # A. Green Doji (At Support)
-            # Body choti honi chahiye total range ke mukable (Doji)
-            is_doji = body < (total_range * 0.1)
-            is_green = c['Close'] >= c['Open']
+            is_doji = body < (total_range * 0.15) # 15% body allowed for Doji
+            is_green = c['Close'] > c['Open']
+            is_red = c['Close'] < c['Open']
             
-            # B. Inverted Hammer / Red Doji (At Resistance)
-            # Inverted Hammer: Upper wick body se 2 guna badi honi chahiye
+            # Inverted Hammer (Upper wick should be 2x body)
             is_inv_hammer = upper_wick > (body * 2) and lower_wick < (body * 0.5)
-            is_red = c['Close'] <= c['Open']
-            is_red_doji = is_doji and is_red
+            
+            # Volume Spike Check
+            is_vol_spike = c['Volume'] > avg_vol_15
 
-            # --- 3. SCANNING LOGIC ---
-            # Condition 1: Support ke paas Green Doji
-            if c['Low'] <= (major_sup * 1.005) and is_green and is_doji:
-                results.append({"Stock": stock_name, "Signal": "🟢 DOJI AT SUPPORT", "Price": c['Close'], "Level": "Support", "Type": "Bullish Reversal"})
+            # --- 3. TRIPLE CONFIRMATION SCANNING ---
+            
+            # A. Bullish Reversal: Support + Green Doji + High Volume
+            if c['Low'] <= (major_sup * 1.005) and is_green and is_doji and is_vol_spike:
+                results.append({
+                    "Stock": stock_name, 
+                    "Signal": "🟢 BULLISH DOJI", 
+                    "Price": round(c['Close'], 2), 
+                    "Volume": f"{(c['Volume']/avg_vol_15):.1f}x",
+                    "Level": "At Support"
+                })
 
-            # Condition 2: Resistance ke paas Inverted Hammer ya Red Doji
-            elif c['High'] >= (major_res * 0.995) and (is_inv_hammer or is_red_doji):
-                results.append({"Stock": stock_name, "Signal": "🔴 REVERSAL AT RES", "Price": c['Close'], "Level": "Resistance", "Type": "Bearish Reversal"})
+            # B. Bearish Reversal: Resistance + (Inv Hammer OR Red Doji) + High Volume
+            elif c['High'] >= (major_res * 0.995) and (is_inv_hammer or (is_doji and is_red)) and is_vol_spike:
+                results.append({
+                    "Stock": stock_name, 
+                    "Signal": "🔴 BEARISH REVERSAL", 
+                    "Price": round(c['Close'], 2), 
+                    "Volume": f"{(c['Volume']/avg_vol_15):.1f}x",
+                    "Level": "At Resistance"
+                })
 
         except: pass 
         progress_bar.progress((i + 1) / len(WATCHLIST))
@@ -226,7 +237,7 @@ if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
     progress_bar.empty()
     
     if len(results) > 0:
-        st.success(f"🎯 {len(results)} Strong Reversal Setups Found!")
+        st.success(f"🎯 {len(results)} Confirmed Reversal Setups Found!")
         st.dataframe(pd.DataFrame(results), use_container_width=True, hide_index=True)
     else:
-        st.info("Currently no Doji/Inverted Hammer patterns near major levels.")
+        st.info("Currently no high-volume Doji/Hammer patterns near major levels.")
