@@ -166,12 +166,12 @@ with c3:
         st.session_state['auto_scan'] = False
 
 # ==========================================
-# 6. SCANNER ENGINE (15-Min Reversal + Volume Spike)
+# 6. SCANNER ENGINE (15-Min Reversal + SOUND ALERT)
 # ==========================================
 if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
     st.session_state['run_once'] = False
     
-    st.toast("Scanning High-Volume Reversal Patterns...", icon="📊") 
+    st.toast("Scanning for High-Volume Reversal Patterns...", icon="🔔") 
     progress_bar = st.progress(0)
     status_text = st.empty()
     results = []
@@ -186,49 +186,30 @@ if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
             if df.empty or len(df) < 40: continue
             if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
             
-            # --- 1. LEVELS & VOLUME AVG ---
+            # --- LEVELS & VOLUME ---
             major_res = df['High'].iloc[:-20].max()
             major_sup = df['Low'].iloc[:-20].min()
-            avg_vol_15 = df['Volume'].rolling(15).mean().iloc[-2] # 15 candle volume avg
+            avg_vol_15 = df['Volume'].rolling(15).mean().iloc[-2]
             
-            # --- 2. CANDLESTICK LOGIC ---
+            # --- CANDLE LOGIC ---
             c = df.iloc[-2]
             body = abs(c['Open'] - c['Close'])
             total_range = c['High'] - c['Low']
             upper_wick = c['High'] - max(c['Open'], c['Close'])
             lower_wick = min(c['Open'], c['Close']) - c['Low']
             
-            is_doji = body < (total_range * 0.15) # 15% body allowed for Doji
+            is_doji = body < (total_range * 0.15)
             is_green = c['Close'] > c['Open']
             is_red = c['Close'] < c['Open']
-            
-            # Inverted Hammer (Upper wick should be 2x body)
             is_inv_hammer = upper_wick > (body * 2) and lower_wick < (body * 0.5)
-            
-            # Volume Spike Check
             is_vol_spike = c['Volume'] > avg_vol_15
 
-            # --- 3. TRIPLE CONFIRMATION SCANNING ---
-            
-            # A. Bullish Reversal: Support + Green Doji + High Volume
+            # --- SCANNING ---
             if c['Low'] <= (major_sup * 1.005) and is_green and is_doji and is_vol_spike:
-                results.append({
-                    "Stock": stock_name, 
-                    "Signal": "🟢 BULLISH DOJI", 
-                    "Price": round(c['Close'], 2), 
-                    "Volume": f"{(c['Volume']/avg_vol_15):.1f}x",
-                    "Level": "At Support"
-                })
+                results.append({"Stock": stock_name, "Signal": "🟢 BULLISH DOJI", "Price": round(c['Close'], 2), "Volume": f"{(c['Volume']/avg_vol_15):.1f}x", "Level": "At Support"})
 
-            # B. Bearish Reversal: Resistance + (Inv Hammer OR Red Doji) + High Volume
             elif c['High'] >= (major_res * 0.995) and (is_inv_hammer or (is_doji and is_red)) and is_vol_spike:
-                results.append({
-                    "Stock": stock_name, 
-                    "Signal": "🔴 BEARISH REVERSAL", 
-                    "Price": round(c['Close'], 2), 
-                    "Volume": f"{(c['Volume']/avg_vol_15):.1f}x",
-                    "Level": "At Resistance"
-                })
+                results.append({"Stock": stock_name, "Signal": "🔴 BEARISH REVERSAL", "Price": round(c['Close'], 2), "Volume": f"{(c['Volume']/avg_vol_15):.1f}x", "Level": "At Resistance"})
 
         except: pass 
         progress_bar.progress((i + 1) / len(WATCHLIST))
@@ -236,8 +217,19 @@ if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
     status_text.empty()
     progress_bar.empty()
     
+    # --- SOUND ALERT LOGIC ---
     if len(results) > 0:
         st.success(f"🎯 {len(results)} Confirmed Reversal Setups Found!")
         st.dataframe(pd.DataFrame(results), use_container_width=True, hide_index=True)
+        
+        # Yeh chota sa HTML snippet laptop par ghanti bajayega
+        st.components.v1.html(
+            """
+            <audio autoplay>
+                <source src="https://raw.githubusercontent.com/rafaelreis-hotmart/Audio-Files/main/notification.mp3" type="audio/mp3">
+            </audio>
+            """,
+            height=0,
+        )
     else:
-        st.info("Currently no high-volume Doji/Hammer patterns near major levels.")
+        st.info("Currently no high-volume setups. Terminal is waiting...")
