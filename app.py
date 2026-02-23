@@ -166,7 +166,7 @@ with c3:
         st.session_state['auto_scan'] = False
 
 # ==========================================
-# 6. SCANNER ENGINE
+# 6. SCANNER ENGINE (Updated with 15-Candle Volume Spike)
 # ==========================================
 if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
     st.session_state['run_once'] = False
@@ -182,21 +182,46 @@ if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
              status_text.markdown(f"**Scanning:** `{stock_name}`... ({i}/{len(WATCHLIST)})")
         
         try:
+            # 5 din ka data le rahe hain taaki 15 candles ka average mil sake
             df = yf.download(symbol, period="5d", interval="5m", progress=False)
-            if df.empty: continue
+            if df.empty or len(df) < 20: continue
             if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
                 
+            # Indicators
             delta = df['Close'].diff()
-            gain = (delta.where(delta > 0, 0)).rolling(14).mean(); loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
-            rs = gain / loss; df['RSI'] = 100 - (100 / (1 + rs))
-            df['Vol_SMA'] = df['Volume'].rolling(20).mean()
+            gain = (delta.where(delta > 0, 0)).rolling(14).mean()
+            loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
+            rs = gain / loss
+            df['RSI'] = 100 - (100 / (1 + rs))
             
-            curr = df.iloc[-2]; prev_high = df['High'].iloc[:-20].max(); prev_low = df['Low'].iloc[:-20].min()
+            # --- VOLUME SPIKE LOGIC (Last 15 Candles) ---
+            # Pichli 15 candles ka simple moving average
+            df['Vol_SMA_15'] = df['Volume'].rolling(15).mean()
             
-            if (curr['Close'] > prev_high) and (curr['Volume'] > curr['Vol_SMA']):
-                results.append({"Stock": stock_name, "Signal": "🚀 BREAKOUT", "Price (₹)": curr['Close'], "RSI": int(curr['RSI']), "Volume Spike": f"{curr['Volume']/curr['Vol_SMA']:.1f}x"})
-            elif (curr['Close'] < prev_low) and (curr['Volume'] > curr['Vol_SMA']):
-                results.append({"Stock": stock_name, "Signal": "🔻 BREAKDOWN", "Price (₹)": curr['Close'], "RSI": int(curr['RSI']), "Volume Spike": f"{curr['Volume']/curr['Vol_SMA']:.1f}x"})
+            curr = df.iloc[-2] # Current Candle
+            avg_vol_15 = curr['Vol_SMA_15']
+            
+            # Breakout/Breakdown Levels (Pichle 20 candles ka High/Low)
+            prev_high = df['High'].iloc[:-20].max()
+            prev_low = df['Low'].iloc[:-20].min()
+            
+            # Condition: Price Breakout + Volume > 15 Candle Average
+            if (curr['Close'] > prev_high) and (curr['Volume'] > avg_vol_15):
+                results.append({
+                    "Stock": stock_name, 
+                    "Signal": "🚀 BREAKOUT", 
+                    "Price (₹)": curr['Close'], 
+                    "RSI": int(curr['RSI']), 
+                    "Vol vs Avg": f"{(curr['Volume']/avg_vol_15):.1f}x"
+                })
+            elif (curr['Close'] < prev_low) and (curr['Volume'] > avg_vol_15):
+                results.append({
+                    "Stock": stock_name, 
+                    "Signal": "🔻 BREAKDOWN", 
+                    "Price (₹)": curr['Close'], 
+                    "RSI": int(curr['RSI']), 
+                    "Vol vs Avg": f"{(curr['Volume']/avg_vol_15):.1f}x"
+                })
         except: pass 
         progress_bar.progress((i + 1) / len(WATCHLIST))
         
@@ -204,21 +229,13 @@ if st.session_state.get('run_once', False) or st.session_state['auto_scan']:
     progress_bar.empty()
     st.toast("Scan Complete!", icon="✅")
     
+    # Results Display
     if len(results) > 0:
         st.success(f"🔥 {len(results)} High-Momentum Signals Found!")
         result_df = pd.DataFrame(results)
         st.dataframe(result_df, use_container_width=True, hide_index=True, column_config={
-            "Signal": st.column_config.TextColumn("Signal"),
             "RSI": st.column_config.ProgressColumn("RSI Strength", format="%d", min_value=0, max_value=100),
             "Price (₹)": st.column_config.NumberColumn("Price (₹)", format="₹%.2f"),
         })
     else:
-        st.info("Currently No High-Probability Setups. Market might be sideways.")
-        
-    if st.session_state['auto_scan']:
-        st.warning("⏳ Auto-Pilot Active. Next scan in 5 minutes...")
-        time.sleep(300)
-        st.rerun()
-
-st.divider()
-st.markdown("<h5 style='text-align: center; color: #6e7285;'>© 2026 The Safal Trader | Institutional Terminal</h5>", unsafe_allow_html=True)
+        st.info("Abhi koi volume breakout nahi mila. Market shant hai.")
