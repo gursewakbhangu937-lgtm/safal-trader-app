@@ -1,0 +1,6 @@
+[theme]
+primaryColor = "#00D26A" # Buttons aur sliders ke liye Green color
+backgroundColor = "#0E1117" # Background ke liye dark color
+secondaryBackgroundColor = "#262730" # Sidebar aur background boxes ke liye thoda light dark
+textColor = "#FFFFFF" # Text ka color white
+font = "sans serif"
