@@ -1,8 +1,9 @@
 import streamlit as st
 import sqlite3
+import datetime
+from calendar import monthrange
 
 # --- DATABASE SETUP ---
-# Yeh function ek local database banayega taaki aapke tasks save rahein
 def init_db():
     conn = sqlite3.connect('reminders.db')
     c = conn.cursor()
@@ -39,7 +40,12 @@ init_db()
 st.set_page_config(page_title="Smart Daily Tools", page_icon="📱", layout="centered")
 
 # --- NAVIGATION ---
-page = st.sidebar.radio("Navigation", ["📝 Reminder App (Permanent)", "🧮 Smart Calculator", "🏦 EMI & Loan Calculator"])
+page = st.sidebar.radio("Navigation", [
+    "📝 Reminder App (Permanent)", 
+    "🧮 Smart Calculator", 
+    "🏦 EMI & Loan Calculator",
+    "⏳ Age Calculator"
+])
 
 # ==========================================
 # PAGE 1: REMINDER APP
@@ -48,7 +54,6 @@ if page == "📝 Reminder App (Permanent)":
     st.title("📝 Reminder & Task Manager")
     st.write("Aapke zaroori kaam ab yahan permanently save rahenge.")
 
-    # Naya task add karne ka input
     new_task = st.text_input("Naya kaam add karein:", placeholder="Jaise: Aaj bank jana hai...")
     
     if st.button("Add Task"):
@@ -62,7 +67,6 @@ if page == "📝 Reminder App (Permanent)":
     st.markdown("---")
     st.subheader("Aapke Pending Kaam:")
     
-    # Database se tasks nikal kar dikhana
     saved_tasks = get_tasks_from_db()
     
     if len(saved_tasks) == 0:
@@ -73,7 +77,6 @@ if page == "📝 Reminder App (Permanent)":
             with cols[0]:
                 st.write(f"🔹 {task_text}")
             with cols[1]:
-                # Unique key zaroori hai har button ke liye
                 if st.button("❌ Done", key=f"del_{task_id}"):
                     delete_task_from_db(task_id)
                     st.rerun()
@@ -123,8 +126,6 @@ elif page == "🏦 EMI & Loan Calculator":
     tenure_years = st.number_input("Loan kitne saal ke liye hai?:", min_value=1, value=5, step=1)
 
     if st.button("EMI Calculate Karein"):
-        # EMI Formula: P x R x (1+R)^N / [(1+R)^N-1]
-        # P = Principal, R = Monthly Interest Rate, N = Total Months
         P = loan_amount
         R = interest_rate / 12 / 100
         N = tenure_years * 12
@@ -136,7 +137,6 @@ elif page == "🏦 EMI & Loan Calculator":
         st.markdown("---")
         st.subheader("📊 Loan Summary:")
         
-        # Displaying results in columns for better look
         col1, col2, col3 = st.columns(3)
         with col1:
             st.info(f"**Har Mahine ki EMI:**\n\n₹ {int(emi):,}")
@@ -144,3 +144,34 @@ elif page == "🏦 EMI & Loan Calculator":
             st.warning(f"**Total Interest (Biaj):**\n\n₹ {int(total_interest):,}")
         with col3:
             st.success(f"**Total Paise Dene Hain:**\n\n₹ {int(total_payment):,}")
+
+# ==========================================
+# PAGE 4: AGE CALCULATOR
+# ==========================================
+elif page == "⏳ Age Calculator":
+    st.title("⏳ Accurate Age Calculator")
+    st.write("Apni Date of Birth dalein aur exact umar pata karein.")
+
+    # Calendar input
+    dob = st.date_input("Date of Birth (Janam Din) chunein:", value=datetime.date(1991, 7, 20), min_value=datetime.date(1900, 1, 1), max_value=datetime.date.today())
+
+    if st.button("Calculate Age"):
+        today = datetime.date.today()
+        
+        years = today.year - dob.year
+        months = today.month - dob.month
+        days = today.day - dob.day
+
+        # Agar din negative mein aate hain, toh pichle mahine ke din udhar lene padenge
+        if days < 0:
+            months -= 1
+            prev_month = today.month - 1 if today.month > 1 else 12
+            prev_month_year = today.year if today.month > 1 else today.year - 1
+            days += monthrange(prev_month_year, prev_month)[1]
+        
+        # Agar mahine negative mein aate hain, toh pichle saal se udhar lene padenge
+        if months < 0:
+            years -= 1
+            months += 12
+
+        st.success(f"🎉 **Aapki Exact Age Hai:** {years} Saal, {months} Mahine, aur {days} Din.")
